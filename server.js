@@ -7,7 +7,7 @@ async function startFetchingJobs(){
     await GlassDoorScrapper.run("react js jobs","United States" )
     if(process.env.LINKEDIN_COOKIE)
         await GlassDoorScrapper.findLinkedInDecisonMakers(process.env.LINKEDIN_COOKIE)
-
+    await GlassDoorScrapper.dbInsertions(GlassDoorScrapper.allJobs)
      console.log( GlassDoorScrapper.allJobs)
 }
 

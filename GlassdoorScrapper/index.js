@@ -2,8 +2,22 @@ const puppeteer = require("puppeteer");
 const chalk = require("chalk");
 const cheerio = require('cheerio');
 const { GLASSDOOR_URL_MAIN, GLASSDOOR_SELECTOR_GOTO_ALL_JOBS, GLASSDOOR_SELECTOR_MODAL } = require("./constants");
+var mysql = require('mysql2');
+require('dotenv').config({ path: '../../.env' });
 
+var con = mysql.createConnection({
+    host: '127.0.0.1',
+    port: 3306,  
+    user: 'root',
+    password: '',
+    database: 'laravel_spider',
+    connectionLimit: 10
+});
 
+con.connect(function(err) {
+    if (err) throw err;
+    console.log("DB Connected!");
+});
 
 // Class Scrapper
 // This class provides a web scraping function that logs into Glassdoor with provided user credentials and searches for jobs based on a job title and location. It uses Puppeteer to navigate and scrape data from the website.
@@ -153,11 +167,33 @@ class Scrapper {
                 jobLink: jobLink,
                 location: location,
                 source: "glassDoor"
-            });          
+            });
         }
         return job;
     }
 
+    async dbInsertions(data) {
+        try {
+            for (let i = 0; i < data.length; i++) {
+                const element = data[i];
+                const companyName = element.companyName.split("\n")[0];
+                const url = element.jobLink;
+                const address = element.location;
+                var sql = "INSERT INTO businesses (scraper_job_id,company,url, address, created_at, updated_at) VALUES ?";
+                var values = [[1, companyName, url, address, new Date(), new Date()]];
+                con.query(sql, [values], function (err, result) {
+                    if (err) {
+                        console.log(err);
+                    }else{
+                        console.log("Number of records inserted: " + result.affectedRows);
+                    }
+                });
+            }
+        }
+        catch (error) {
+            throw new Error(`Unable to insert data : ${error.message}`);
+        }
+    }
 }
 
 module.exports = Scrapper
